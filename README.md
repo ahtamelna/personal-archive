@@ -1,65 +1,24 @@
 # Personal Archive
 
-A single-file personal digital archive using:
+Static GitHub Pages personal archive with Firebase Authentication/Firestore for admin/content data and GitHub repository storage for archive files.
 
-- GitHub Pages for hosting
-- Firebase Authentication for the administrator login
-- Cloud Firestore for articles, events, pages, navigation, settings, and archive metadata
-- GitHub repository files for public archive files
-- No Firebase Cloud Storage
-- No localStorage/database in the browser
+## GitHub archive storage
 
-## Firebase configuration
+The admin dashboard uses GitHub's REST API Contents endpoint to upload, replace, and delete archive files. GitHub documents that this endpoint supports fine-grained personal access tokens with repository **Contents: write** permission.
 
-The provided Firebase web configuration is already included in `index.html`.
-If you change Firebase projects, replace the `firebaseConfig` object in the HTML with the new web app configuration.
+The token is intentionally NOT stored in Firestore, the repository, or the HTML source. It is entered by the administrator in Admin > Archive files and kept only in JavaScript memory for the current browser tab. Reloading the page clears it.
 
-## Archive files
+For a public GitHub repository, public archive files can be served through `raw.githubusercontent.com`. A private repository is not a public file host; private files require authenticated access and therefore cannot be exposed as ordinary public download links from a static GitHub Pages site.
 
-Put public archive files in `archive/`, commit/push them to GitHub, then register their metadata in Admin -> Archive files.
-The website accepts either a repository-relative path such as `archive/example.pdf` or a direct URL.
+## Setup
 
-A public GitHub repository cannot provide truly private file storage. The archive record can be private in Firestore, but a file physically present in a public repository remains publicly accessible if someone knows its URL. For genuinely private files, use a provider that enforces access permissions (for example a restricted Google Drive file) and store its URL as the archive record's direct URL.
+1. Enable Firebase Authentication > Email/Password.
+2. Enable Firestore and publish `firestore.rules`.
+3. Put this project in a GitHub repository and enable GitHub Pages with GitHub Actions.
+4. Open the site and go to Admin.
+5. Initialize the administrator.
+6. Open Admin > Archive files.
+7. Enter the GitHub repository owner, repository name, branch, and a fine-grained token with Contents: write permission for that repository.
+8. Click Use this repository, then Add file.
 
-## Firebase rules
-
-`firestore.rules` is included. It allows public users to read only public records, while authenticated administrators can manage all content.
-
-The first administrator is created through the website's first-run Admin screen. After setup is initialized, the rules prevent additional admin records from being created through the client.
-
-## GitHub Pages
-
-The included `.github/workflows/pages.yml` deploys the repository to GitHub Pages whenever `main` is updated.
-
-In GitHub:
-1. Repository -> Settings -> Pages.
-2. Under Build and deployment, choose GitHub Actions.
-3. Push the repository.
-4. Wait for the Pages workflow to finish.
-
-## Local test
-
-From the repository directory:
-
-    python3 -m http.server 8080
-
-Then open:
-
-    http://localhost:8080/
-
-Do not use a `file://` URL for the final Firebase test.
-
-## Admin
-
-The admin dashboard is not shown in public navigation. Open the site and add `#admin` to the URL, for example:
-
-    https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/#admin
-
-On the first run, create the administrator. Later visits show the login form.
-
-## Important security notes
-
-- Never put a GitHub personal access token in `index.html`.
-- Never put Firebase Admin SDK/service-account credentials in the website.
-- Keep Firestore rules deployed and do not use `allow read, write: if true` in production.
-- The Firebase web API key is not a secret; authorization is provided by Firebase Auth and Firestore Security Rules.
+Never commit the token to the repository and never put it into the HTML source.
