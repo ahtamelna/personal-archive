@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /system/setup {
+      // Needed by the first-run screen and harmless after initialization.
+      allow read: if true;
+      // Only the first authenticated account can initialize the setup document.
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/system/setup)
+        && request.resource.data.initialized == true
+        && request.resource.data.adminUid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      // An administrator can read their own admin record.
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      // First-run account creation. After setup is initialized, no new admin can be created.
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/system/setup)
+        && request.resource.data.role == 'admin';
+      allow update: if isAdmin() && request.auth.uid == uid;
+      allow delete: if isAdmin() && request.auth.uid == uid;
+    }
+
+    match /settings/site {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /articles/{id} {
+      allow read: if isAdmin() || resource.data.public == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /files/{id} {
+      allow read: if isAdmin() || resource.data.public == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /events/{id} {
+      allow read: if isAdmin() || resource.data.public == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /pages/{id} {
+      allow read: if isAdmin() || resource.data.public == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /links/{id} {
+      allow read: if isAdmin() || resource.data.show == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
