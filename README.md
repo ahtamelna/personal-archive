@@ -1,24 +1,34 @@
 # Personal Archive
 
-Static GitHub Pages personal archive with Firebase Authentication/Firestore for admin/content data and GitHub repository storage for archive files.
+Single-file vanilla HTML/CSS/JavaScript personal digital archive using Firebase Authentication, Cloud Firestore and GitHub repository storage, hosted on GitHub Pages.
+
+## Firebase setup
+1. Enable Authentication -> Email/Password.
+2. Create a Firestore database.
+3. Deploy `firestore.rules` in the Firebase console or with the Firebase CLI.
+4. Firebase Storage is not required.
 
 ## GitHub archive storage
+The website stores archive file metadata in Firestore and the actual uploaded file bytes in a GitHub repository through the GitHub REST API.
 
-The admin dashboard uses GitHub's REST API Contents endpoint to upload, replace, and delete archive files. GitHub documents that this endpoint supports fine-grained personal access tokens with repository **Contents: write** permission.
+In Admin -> Archive files, enter:
+- Repository owner
+- Repository name
+- Branch (normally `main`)
+- A fine-grained GitHub personal access token with **Contents: Read and write** permission for that repository
 
-The token is intentionally NOT stored in Firestore, the repository, or the HTML source. It is entered by the administrator in Admin > Archive files and kept only in JavaScript memory for the current browser tab. Reloading the page clears it.
+The token is held only in the current browser tab's memory and is never saved to Firestore or committed to the repository. A page reload requires entering it again.
 
-For a public GitHub repository, public archive files can be served through `raw.githubusercontent.com`. A private repository is not a public file host; private files require authenticated access and therefore cannot be exposed as ordinary public download links from a static GitHub Pages site.
+The GitHub Contents API is used to create/update repository files with Base64 content and to delete them again.
 
-## Setup
+### Public/private limitation
+For a static GitHub Pages site, files intended for anonymous public visitors need to be reachable without authentication. Therefore public archive records use a `raw.githubusercontent.com` URL. If the repository itself is private, those raw URLs cannot be used as anonymous public downloads. The Firestore `public` field controls whether the record is shown by the site; it does not turn a public GitHub repository into private storage.
 
-1. Enable Firebase Authentication > Email/Password.
-2. Enable Firestore and publish `firestore.rules`.
-3. Put this project in a GitHub repository and enable GitHub Pages with GitHub Actions.
-4. Open the site and go to Admin.
-5. Initialize the administrator.
-6. Open Admin > Archive files.
-7. Enter the GitHub repository owner, repository name, branch, and a fine-grained token with Contents: write permission for that repository.
-8. Click Use this repository, then Add file.
+## GitHub Pages
+Push the repository to GitHub and enable Settings -> Pages -> Source -> GitHub Actions. The included workflow deploys the static site.
 
-Never commit the token to the repository and never put it into the HTML source.
+## Sharing QR
+The Website QR section generates a branded QR for the public homepage. The administrator can enable the same QR on the Contact page.
+
+## Security note
+Do not hard-code a GitHub token in `index.html`. The interface intentionally asks the administrator for the token at runtime and keeps it only in memory. A browser-side token is still exposed to the page while the admin session is active, so use a fine-grained token restricted to only the repository that stores this archive.
