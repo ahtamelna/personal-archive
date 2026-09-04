@@ -113,6 +113,21 @@ function render(){document.title=state.settings.title||'Personal Archive';$("sit
 async function checkAdmin(user){if(!user){state.admin=null;return}let s=await getDoc(doc(db,'admins',user.uid));state.admin=s.exists()?{id:user.uid,...s.data()}:null}
 onAuthStateChanged(auth,async user=>{try{await checkAdmin(user);let setup=await getDoc(doc(db,'system','setup'));state.setupExists=setup.exists()&&setup.data().initialized;await loadAll()}catch(e){console.error(e)}});
 function resolveHash(){let h=decodeURIComponent(location.hash.slice(1));if(h==='admin'){go('admin');return}if(h.startsWith('article/')){openArticle(h.slice(8));return}if(h.startsWith('page/')){go('page:'+h.slice(5));return}if(['about','contact','articles','archive','calendar','searchPage','home','featured'].includes(h)){go(h);return}if(!h){go('home')}}
+// Expose every handler used by inline dashboard/editor buttons. The application is an ES module, so
+// normal function declarations are otherwise module-scoped and unavailable to onclick attributes.
+Object.assign(window,{
+  go,goTodayCalendar,changeMonth,closeModal,
+  loginAdmin,setupAdmin,logoutAdmin,togglePass,
+  fmtCmd,insertLink,insertInternalLink,insertButton,
+  newArticle,startArticleEditor,cancelArticleEditor,saveArticle,deleteArticle,
+  newFile,editFile,saveFile,deleteFile,previewFile,
+  saveGithubConfig,testGithubConnection,clearGithubToken,
+  newEvent,editEvent,saveEvent,deleteEvent,
+  newPage,editPage,savePage,deletePage,
+  newNavLink,editNavLink,saveNavLink,deleteNavLink,
+  saveSite,saveFeatured,changeUsername,changePassword,
+  togglePublic,adminTab
+});
 window.addEventListener('hashchange',resolveHash);
 resolveHash();
 </script>
