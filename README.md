@@ -9,26 +9,19 @@ Single-file vanilla HTML/CSS/JavaScript personal digital archive using Firebase 
 4. Firebase Storage is not required.
 
 ## GitHub archive storage
-The website stores archive file metadata in Firestore and the actual uploaded file bytes in a GitHub repository through the GitHub REST API.
+In Admin -> Archive files, enter the GitHub account username, repository name, branch and token. The connection is stored in the admin-only Firestore document `github/config` so it is available after signing in again.
 
-In Admin -> Archive files, enter:
-- Repository owner
-- Repository name
-- Branch (normally `main`)
-- A fine-grained GitHub personal access token with **Contents: Read and write** permission for that repository
+Use a fine-grained GitHub token with Contents: Read and write permission for the archive repository.
 
-The token is held only in the current browser tab's memory and is never saved to Firestore or committed to the repository. A page reload requires entering it again.
-
-The GitHub Contents API is used to create/update repository files with Base64 content and to delete them again.
-
-### Public/private limitation
-For a static GitHub Pages site, files intended for anonymous public visitors need to be reachable without authentication. Therefore public archive records use a `raw.githubusercontent.com` URL. If the repository itself is private, those raw URLs cannot be used as anonymous public downloads. The Firestore `public` field controls whether the record is shown by the site; it does not turn a public GitHub repository into private storage.
+Uploaded archive files are committed under the repository's `archive/` directory. Firestore stores the archive records and their settings. Public files are served through the GitHub Pages site, so the repository must be public if those files need to be accessible to visitors without GitHub authentication.
 
 ## GitHub Pages
 Push the repository to GitHub and enable Settings -> Pages -> Source -> GitHub Actions. The included workflow deploys the static site.
 
-## Sharing QR
-The Website QR section generates a branded QR for the public homepage. The administrator can enable the same QR on the Contact page.
+## Content
+The admin dashboard includes articles, a standalone Featured page, archive files, featured archive files, calendar actions, custom pages, navigation links, site content and account management.
 
-## Security note
-Do not hard-code a GitHub token in `index.html`. The interface intentionally asks the administrator for the token at runtime and keeps it only in memory. A browser-side token is still exposed to the page while the admin session is active, so use a fine-grained token restricted to only the repository that stores this archive.
+Articles are written directly in the dashboard rather than in a popup. The home page can display today's public action and selected featured archive files.
+
+## Security
+The GitHub connection is stored in an admin-only Firestore document and is not included in the public site content. Use a fine-grained token limited to the archive repository and keep the Firestore rules deployed.
